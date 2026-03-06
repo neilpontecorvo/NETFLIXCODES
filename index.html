@@ -1,411 +1,538 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Netflix Codes Browser</title>
-    <!-- Manifest and icon -->
-    <link rel="manifest" href="manifest.webmanifest">
-    <link rel="icon" href="icons/icon-192.png">
-    <meta name="theme-color" content="#141414">
-    <style>
-        /* Reset */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        body {
-            background: #141414;
-            color: #ffffff;
-            font-family: Arial, Helvetica, sans-serif;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-            margin: 0;
-            padding: 0;
-        }
-        header {
-            padding: 1rem;
-            text-align: center;
-            background-color: #0d0d0d;
-            border-bottom: 1px solid #333;
-        }
-        h1 {
-            font-size: 1.5rem;
-        }
-        #controls {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-            padding: 0.5rem 1rem;
-            background: #0d0d0d;
-        }
-        #search {
-            flex: 1;
-            padding: 0.5rem;
-            border: none;
-            border-radius: 4px;
-        }
-        #sort {
-            padding: 0.5rem;
-            border: none;
-            border-radius: 4px;
-        }
-        #categories {
-            flex: 1;
-            overflow-y: auto;
-            padding: 1rem;
-        }
-        .category {
-            border-bottom: 1px solid #333;
-            padding: 0.5rem 0;
-        }
-        .category-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            cursor: pointer;
-        }
-        .category-name {
-            font-weight: bold;
-        }
-        .category-code {
-            font-family: monospace;
-            margin-left: 0.5rem;
-            opacity: 0.8;
-        }
-        .buttons {
-            display: flex;
-            gap: 0.3rem;
-        }
-        button.copy-btn,
-        button.open-btn,
-        button.toggle-btn {
-            background: #333;
-            color: #fff;
-            border: none;
-            border-radius: 4px;
-            padding: 0.3rem 0.5rem;
-            cursor: pointer;
-            font-size: 0.8rem;
-        }
-        button.copy-btn:hover,
-        button.open-btn:hover,
-        button.toggle-btn:hover {
-            background: #444;
-        }
-        .subgenres {
-            margin-top: 0.5rem;
-            padding-left: 1rem;
-            display: none;
-        }
-        .subgenre {
-            padding: 0.3rem 0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            cursor: pointer;
-        }
-        .subgenre-name {
-            font-size: 0.9rem;
-        }
-        .subgenre-code {
-            font-family: monospace;
-            opacity: 0.8;
-            margin-left: 0.5rem;
-        }
-        .hidden {
-            display: none;
-        }
-        footer {
-            text-align: center;
-            padding: 1rem;
-            background-color: #0d0d0d;
-            font-size: 0.75rem;
-            opacity: 0.6;
-        }
-    </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>Netflix Codes Explorer</title>
+<meta name="theme-color" content="#0b1020" />
+<style>
+:root {
+  --bg: #071019;
+  --panel: rgba(12, 18, 32, 0.82);
+  --panel2: rgba(13, 20, 36, 0.95);
+  --line: rgba(148, 163, 184, 0.18);
+  --text: #eef3ff;
+  --muted: #97a3b6;
+  --accent: #e50914;
+  --accent2: #7c3aed;
+  --shadow: 0 20px 60px rgba(0,0,0,.30);
+  --radius: 18px;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0;
+  min-height: 100%;
+  background:
+    radial-gradient(1000px 600px at 0% 0%, rgba(229,9,20,.16), transparent 50%),
+    radial-gradient(900px 650px at 100% 0%, rgba(124,58,237,.14), transparent 45%),
+    linear-gradient(180deg, #08101c, #050913 64%);
+  color: var(--text);
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+}
+button, input, select { font: inherit; }
+.hero {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  backdrop-filter: blur(16px);
+  background: linear-gradient(180deg, rgba(5,9,19,.94), rgba(5,9,19,.78));
+  border-bottom: 1px solid rgba(255,255,255,.05);
+}
+.hero-inner {
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: 18px 22px 16px;
+}
+.title-wrap {
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:16px;
+  flex-wrap:wrap;
+}
+h1 {
+  margin:0;
+  font-size: clamp(28px, 4vw, 42px);
+  line-height: 1.02;
+  letter-spacing: -.03em;
+}
+.subtitle {
+  margin: 10px 0 0;
+  max-width: 940px;
+  color: var(--muted);
+  line-height: 1.45;
+}
+.badges {
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  margin-top: 14px;
+}
+.badge {
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,.035);
+  color: #dce7ff;
+  font-size: 13px;
+}
+.controls {
+  display:grid;
+  grid-template-columns: 1.4fr .8fr .8fr auto;
+  gap: 12px;
+  margin-top: 16px;
+}
+.control, .panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+.control {
+  padding: 12px 14px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.control input, .control select {
+  width: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text);
+}
+.control select option { color: #111827; }
+button.action {
+  cursor:pointer;
+  border: 1px solid rgba(229,9,20,.26);
+  background: linear-gradient(180deg, rgba(229,9,20,.18), rgba(124,58,237,.14));
+  color: white;
+  padding: 12px 16px;
+  border-radius: 14px;
+}
+.shell {
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: 22px;
+}
+.layout {
+  display:grid;
+  grid-template-columns: 340px 1fr;
+  gap: 18px;
+}
+.sidebar {
+  position: sticky;
+  top: 165px;
+  align-self: start;
+  max-height: calc(100vh - 190px);
+  overflow: auto;
+  padding: 14px;
+}
+.sidebar-head, .main-head {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  margin-bottom: 14px;
+}
+.sidebar h2, .main h2 {
+  margin:0;
+  font-size: 17px;
+}
+.small { color: var(--muted); font-size: 12px; }
+.category-list {
+  display:grid;
+  gap:8px;
+}
+.category-btn {
+  width:100%;
+  text-align:left;
+  background:transparent;
+  color: var(--text);
+  border:1px solid transparent;
+  padding: 12px;
+  border-radius: 14px;
+  cursor:pointer;
+}
+.category-btn:hover {
+  background: rgba(255,255,255,.04);
+  border-color: var(--line);
+}
+.category-btn.active {
+  background: linear-gradient(180deg, rgba(229,9,20,.15), rgba(124,58,237,.15));
+  border-color: rgba(229,9,20,.26);
+}
+.category-row {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+}
+.category-title {
+  font-weight:700;
+  font-size:14px;
+}
+.category-sub {
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-top:5px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.main {
+  display:grid;
+  gap: 18px;
+}
+.summary {
+  padding: 18px;
+}
+.summary-grid {
+  display:grid;
+  grid-template-columns: repeat(4, minmax(0,1fr));
+  gap:12px;
+  margin-top: 14px;
+}
+.metric {
+  background: rgba(255,255,255,.03);
+  border:1px solid var(--line);
+  border-radius: 16px;
+  padding: 14px;
+}
+.metric .k { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+.metric .v { margin-top: 6px; font-size: 28px; font-weight: 800; letter-spacing:-.03em; }
+.list-wrap {
+  padding: 18px;
+}
+.items {
+  display:grid;
+  gap: 12px;
+}
+.item {
+  background: var(--panel2);
+  border:1px solid var(--line);
+  border-radius: 16px;
+  padding: 14px 14px 12px;
+  display:grid;
+  grid-template-columns: minmax(0,1fr) auto;
+  gap: 14px;
+  align-items:center;
+}
+.item-name {
+  font-weight: 700;
+  line-height: 1.35;
+}
+.item-meta {
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.item-actions {
+  display:flex;
+  gap:8px;
+  flex-wrap: wrap;
+  justify-content:flex-end;
+}
+.chip {
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  border-radius:999px;
+  padding:8px 12px;
+  font-size:13px;
+  border:1px solid rgba(229,9,20,.22);
+  background: rgba(229,9,20,.07);
+  color: #ffd7da;
+}
+.btn {
+  border:1px solid var(--line);
+  background: rgba(255,255,255,.04);
+  color: var(--text);
+  border-radius: 12px;
+  padding: 9px 12px;
+  cursor:pointer;
+}
+.btn:hover, button.action:hover { filter: brightness(1.08); }
+.empty {
+  padding: 34px 18px;
+  text-align:center;
+  color: var(--muted);
+  border: 1px dashed var(--line);
+  border-radius: 16px;
+}
+footer {
+  margin-top: 4px;
+  padding: 8px 2px 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+.toast {
+  position: fixed;
+  left:50%;
+  bottom: 20px;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,.86);
+  color: white;
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.12);
+  opacity: 0;
+  pointer-events:none;
+  transition: .18s ease;
+  z-index: 60;
+}
+.toast.show { opacity: 1; }
+
+@media (max-width: 1100px) {
+  .controls { grid-template-columns: 1fr 1fr; }
+  .layout { grid-template-columns: 1fr; }
+  .sidebar { position: static; max-height: none; }
+}
+@media (max-width: 720px) {
+  .hero-inner, .shell { padding-left: 14px; padding-right: 14px; }
+  .controls { grid-template-columns: 1fr; }
+  .summary-grid { grid-template-columns: 1fr 1fr; }
+  .item { grid-template-columns: 1fr; }
+  .item-actions { justify-content: flex-start; }
+}
+</style>
 </head>
 <body>
-<header>
-    <h1>Netflix Codes Browser</h1>
+<header class="hero">
+  <div class="hero-inner">
+    <div class="title-wrap">
+      <div>
+        <h1>Netflix Codes Explorer</h1>
+        <div class="subtitle">Rebuilt as a complete, cleaner catalog app using the uploaded <strong>Netflix Codes.pdf</strong>. This version includes every category and subgenre/code parsed from the 11-page source file.</div>
+        <div class="badges">
+          <div class="badge">25 category groups</div>
+          <div class="badge">301 code entries</div>
+          <div class="badge">Modern responsive GUI</div>
+          <div class="badge">Direct Netflix open links</div>
+        </div>
+      </div>
+    </div>
+    <div class="controls">
+      <div class="control"><span>🔎</span><input id="search" placeholder="Search categories, subgenres, or numeric codes" /></div>
+      <div class="control"><span>⇅</span><select id="sort">
+        <option value="default">Sort: source order</option>
+        <option value="az">Sort: A-Z</option>
+        <option value="count">Sort: most entries</option>
+        <option value="code">Sort: category code</option>
+      </select></div>
+      <div class="control"><span>🧩</span><select id="scope">
+        <option value="all">Show all categories</option>
+        <option value="coded">Only categories with main code</option>
+        <option value="special">Only special groups</option>
+      </select></div>
+      <button class="action" id="resetBtn">Reset</button>
+    </div>
+  </div>
 </header>
-<div id="controls">
-    <input type="text" id="search" placeholder="Search categories or subgenres">
-    <select id="sort">
-        <option value="name">Sort by name</option>
-        <option value="code">Sort by code</option>
-    </select>
+
+<div class="shell">
+  <div class="layout">
+    <aside class="panel sidebar">
+      <div class="sidebar-head">
+        <h2>Categories</h2>
+        <div class="small" id="sidebarCount"></div>
+      </div>
+      <div class="category-list" id="categoryList"></div>
+    </aside>
+
+    <main class="main">
+      <section class="panel summary">
+        <div class="main-head">
+          <div>
+            <h2 id="focusTitle">All categories</h2>
+            <div class="small" id="focusSub">Browse the full code catalog from the uploaded PDF.</div>
+          </div>
+          <div class="chip" id="focusCode">All results</div>
+        </div>
+        <div class="summary-grid">
+          <div class="metric"><div class="k">Visible categories</div><div class="v" id="metricCats">0</div></div>
+          <div class="metric"><div class="k">Visible codes</div><div class="v" id="metricCodes">0</div></div>
+          <div class="metric"><div class="k">Main code</div><div class="v" id="metricMain">-</div></div>
+          <div class="metric"><div class="k">Matches</div><div class="v" id="metricMatches">0</div></div>
+        </div>
+      </section>
+
+      <section class="panel list-wrap">
+        <div class="main-head">
+          <h2>Entries</h2>
+          <div class="small" id="entryNote">Open or copy any code.</div>
+        </div>
+        <div class="items" id="items"></div>
+        <footer>Source dataset: uploaded Netflix Codes.pdf. Interface rebuilt for cleaner navigation, full-code coverage, and easier Android/Desktop use.</footer>
+      </section>
+    </main>
+  </div>
 </div>
-<div id="categories"></div>
-<footer>
-    <span>Made for offline use. Connect to the internet to open links.</span>
-</footer>
+
+<div class="toast" id="toast">Copied</div>
+
 <script>
-// Data for genres and their subgenres
-const genres = [
-    {
-        name: 'Action & Adventure',
-        code: '1365',
-        subgenres: []
-    },
-    {
-        name: 'Sports',
-        code: '4370',
-        subgenres: []
-    },
-    {
-        name: 'Classics',
-        code: '31574',
-        subgenres: []
-    },
-    {
-        name: 'Documentaries',
-        code: '6839',
-        subgenres: [
-            { name: 'Biographical Documentaries', code: '3652' },
-            { name: 'Crime Documentaries', code: '9875' },
-            { name: 'Foreign Documentaries', code: '5161' },
-            { name: 'Historical Documentaries', code: '5349' },
-            { name: 'Military Documentaries', code: '4006' },
-            { name: 'Music & Concert Documentaries', code: '90361' },
-            { name: 'Political Documentaries', code: '7018' },
-            { name: 'Religious Documentaries', code: '10005' },
-            { name: 'Science & Nature Documentaries', code: '2595' },
-            { name: 'Social & Cultural Documentaries', code: '3675' },
-            { name: 'Sports Documentaries', code: '180' },
-            { name: 'Travel & Adventure Documentaries', code: '1159' },
-            { name: 'Emotional Documentaries', code: '1271' },
-            { name: 'Award-Winning Documentaries', code: '93108' },
-            { name: 'Courtroom Documentaries', code: '1078' }
-        ]
-    },
-    {
-        name: 'Comedy',
-        code: '6548',
-        subgenres: [
-            { name: 'Dark Comedies', code: '869' },
-            { name: 'Foreign Comedies', code: '4426' },
-            { name: 'Late Night Comedies', code: '1402' },
-            { name: 'Mockumentaries', code: '26' },
-            { name: 'Political Comedies', code: '2700' },
-            { name: 'Romantic Comedies', code: '5475' },
-            { name: 'Satires', code: '4922' },
-            { name: 'Screwball Comedies', code: '9702' },
-            { name: 'Slapstick Comedies', code: '10256' },
-            { name: 'Sports Comedies', code: '5286' },
-            { name: 'Stand-Up Comedy', code: '11559' },
-            { name: 'Teen Comedies', code: '3519' },
-            { name: 'Goofy Stand-up Comedy', code: '1088' },
-            { name: 'Emotional Comedies', code: '323' },
-            { name: 'Raunchy Comedies on Blu-ray', code: '2969' },
-            { name: 'Black Sitcoms', code: '81416282' }
-        ]
-    },
-    {
-        name: 'Drama',
-        code: '5763',
-        subgenres: [
-            { name: 'Biographical Dramas', code: '3179' },
-            { name: 'Courtroom Dramas', code: '52858' },
-            { name: 'Crime Dramas', code: '6889' },
-            { name: 'Dramas Based on Books', code: '4961' },
-            { name: 'Dramas Based on Real Life', code: '3653' },
-            { name: 'Foreign Dramas', code: '2150' },
-            { name: 'Gay & Lesbian Dramas', code: '500' },
-            { name: 'Independent Dramas', code: '384' },
-            { name: 'Military Dramas', code: '11' },
-            { name: 'Political Dramas', code: '6616' },
-            { name: 'Romantic Dramas', code: '1255' },
-            { name: 'Showbiz Dramas', code: '5012' },
-            { name: 'Social Issue Dramas', code: '3947' },
-            { name: 'Sports Dramas', code: '7243' },
-            { name: 'Tearjerkers', code: '6384' },
-            { name: 'Teen Dramas', code: '9299' },
-            { name: 'Emotional Dramas from the 1920s', code: '1182' },
-            { name: 'Emotional Dramas from the 1930s', code: '1209' },
-            { name: 'Emotional Dramas from the 1940s', code: '1236' },
-            { name: 'Emotional Dramas from the 1950s', code: '1259' },
-            { name: 'Emotional Dramas from the 1960s', code: '1289' },
-            { name: 'Emotional Dramas from the 1970s', code: '1314' },
-            { name: 'Emotional Dramas from the 1980s', code: '1344' },
-            { name: 'Emotional Independent Dramas', code: '3743' },
-            { name: 'Emotional Political Dramas', code: '3874' },
-            { name: 'Emotional Psychological Dramas', code: '352' },
-            { name: 'Emotional Teen Dramas', code: '1593' },
-            { name: 'Classic Dramas', code: '29809' },
-            { name: 'Classic Romantic Dramas', code: '30267' },
-            { name: 'First-Love Dramas', code: '8191002' }
-        ]
-    },
-    {
-        name: 'Sci-Fi & Fantasy',
-        code: '1492',
-        subgenres: []
-    },
-    {
-        name: 'Horror',
-        code: '8711',
-        subgenres: []
-    },
-    {
-        name: 'Children & Family Films',
-        code: '783',
-        subgenres: []
-    },
-    {
-        name: 'Music',
-        code: '1701',
-        subgenres: []
-    },
-    {
-        name: 'Thrillers',
-        code: '8933',
-        subgenres: []
-    },
-    {
-        name: 'Animation',
-        code: '4698',
-        subgenres: []
-    },
-    {
-        name: 'Anime',
-        code: '7424',
-        subgenres: []
-    },
-    {
-        name: 'Romance',
-        code: '8883',
-        subgenres: []
-    },
-    {
-        name: 'Faith & Spirituality / Kids Faith & Spirituality',
-        code: '751423',
-        subgenres: []
-    }
-];
+const DATA = [{"name": "Action & Adventure", "code": "1365", "items": [["43040", "Action comedies"], ["1568", "Action & fantasy"], ["43048", "Action thrillers"], ["7442", "Adventures"], ["46576", "Classic Action & Adventure"], ["9584", "Crime action & adventure"], ["11828", "Foreign action & adventure"], ["20541", "Hijacking movies"], ["8985", "Martial arts movies"], ["10702", "Spy action & adventure"], ["7700", "Westerns"], ["45302", "Road Trip Action & Adventure"]]}, {"name": "Anime", "code": "7424", "items": [["11881", "Adult animation"], ["5507", "Animal tales"], ["2729", "Anime Sci-Fi"], ["2653", "Anime action"], ["9302", "Anime comedies"], ["452", "Anime dramas"], ["11146", "Anime fantasy"], ["3063", "Anime movies"], ["10695", "Anime horror"], ["6721", "Anime series"]]}, {"name": "Children & Family Movies", "code": "783", "items": [["10659", "Education for kids"], ["51056", "Family movies"], ["52843", "Kids music"], ["27346", "Kids' TV"], ["10056", "Movies based on children's books"], ["11177", "TV cartoons"], ["33254", "Critically acclaimed talking animal animation"]]}, {"name": "Christmas", "code": "", "items": [["1527064", "British Christmas children & family films"], ["1721544", "Canadian Christmas children & family films"], ["2300975", "Twisted Christmas"], ["1474017", "Christmas children & family films"], ["1476024", "Christmas children & family films from the 1990s"], ["1527063", "European Christmas children & family films"], ["1475066", "Feel-good Christmas children & family films"], ["1475071", "Goofy Christmas children & family films"], ["1394527", "Romantic Christmas films"]]}, {"name": "Classic Movies", "code": "31574", "items": [["31574", "Classic Movies"], ["47147", "Classic SF & fantasy"], ["46553", "Classic TV shows"], ["46576", "Classic action & adventure"], ["31694", "Classic comedies"], ["29809", "Classic dramas"], ["32392", "Classic musical comedy"], ["46588", "Classic thrillers"], ["48744", "Classic war movies"], ["47465", "Classic westerns"], ["52858", "Epics"], ["7687", "Film Noir"], ["53310", "Silent Movies"]]}, {"name": "Comedies", "code": "6548", "items": [["869", "Dark comedies"], ["4426", "Foreign comedies"], ["89585", "Horror comedies"], ["26", "Mockumentaries"], ["13335", "Musicals comedies"], ["2700", "Political comedies"], ["5475", "Romantic Comedies"], ["4922", "Satires"], ["9702", "Screwball Comedies"], ["10256", "Slapstick comedies"], ["11559", "Stand-up Comedy"], ["77213", "Absurd Comedies"], ["2351", "Wacky Movies"], ["1474015", "Christmas Comedies"], ["932", "Scary Comedies"], ["45407", "Critically-acclaimed Road Trip Comedy Movies"]]}, {"name": "Stand-up Comedy", "code": "11559", "items": [["1088", "Goofy Stand-up Comedy"], ["1516534", "Stand-up comedy & talk shows"], ["4372", "Stand-up Comedy starring George Carlin"]]}, {"name": "Documentaries", "code": "6839", "items": [["3652", "Biographical documentaries"], ["9875", "Crime documentaries"], ["5349", "Historical documentaries"], ["4006", "Military documentaries"], ["90361", "Music & concert documentaries"], ["7018", "Political documentaries"], ["2595", "Science & nature documentaries"], ["3675", "Social & cultural documentaries"], ["2760", "Spirituality documentaries"], ["180", "Sports documentaries"], ["1159", "Travel & adventure documentaries"], ["3661", "British Historical Documentaries"], ["10466", "Critically-acclaimed Historical Documentaries"], ["5288", "Critically-acclaimed Military Historical Documentaries"]]}, {"name": "Dramas", "code": "5763", "items": [["11", "Army dramas"], ["3179", "Biographical dramas"], ["6889", "Crime dramas"], ["4961", "Dramas based on books"], ["3653", "Dramas based on real life"], ["500", "LGBTQ+ dramas"], ["6616", "Political Dramas"], ["1255", "Romantic dramas"], ["5012", "Showbiz dramas"], ["3947", "Social issues dramas"], ["7243", "Sports dramas"], ["12123", "Period Pieces"], ["6384", "Tearjerkers"], ["45431", "Critically Acclaimed Road Trip Dramas"], ["28092", "Inspiring Underdog Dramas"], ["28289", "Feel-good Underdog Drama Films"], ["53238", "Underdog Dramas Based on Books"], ["29584", "Underdog Family Drama Films"]]}, {"name": "Emotional Movies", "code": "100039", "items": [["3046", "Emotional Biographical Documentaries"], ["1998", "Emotional Biographical Movies"], ["323", "Emotional Comedies"], ["1271", "Emotional Documentaries"], ["52982", "Emotional Epics"], ["4136", "Emotional Movies"], ["905", "Emotional Movies based on children's books"], ["1344", "Emotional Dramas from the 1980s"], ["1705", "Emotional Movies from the 1960s"], ["1730", "Emotional Movies from the 1970s"], ["1749", "Emotional Movies from the 1980s"], ["3874", "Emotional Political Dramas"], ["52981", "Emotional Political Movies based on Books"], ["3074", "Emotional Showbiz Movies"], ["1734", "Emotional Sports Dramas"], ["1593", "Emotional Teen Dramas"], ["694", "Emotional Teen Movies"], ["3180", "Emotional Thrillers"], ["25833", "Emotional TV Programmes"], ["1695", "Emotional War Movies based on real life"], ["1028", "Emotional War Movies from the 1940s"]]}, {"name": "War Movies", "code": "48744", "items": [["2218", "Critically-acclaimed British War Movies"], ["1886", "Critically-acclaimed Dark War Dramas"], ["4572", "Critically-acclaimed Dark War Movies"], ["846", "Critically-acclaimed War Movies"], ["4784", "Critically-acclaimed War Movies based on Books"], ["4410", "Dark Foreign War Movies"], ["1121", "Dark War Movies from the 1960s"], ["109298", "Emmy Award Winners"]]}, {"name": "Foreign Movies", "code": "78367", "items": [["107456", "Arabic Movies"], ["100310", "Argentinian Movies"], ["3761", "African Movies"], ["100373", "Brazilian Movies"], ["77232", "Asian action movies"], ["5230", "Australian movies"], ["262", "Belgian movies"], ["10757", "British movies"], ["107519", "Canadian Movies"], ["3960", "Chinese movies"], ["10606", "Dutch movies"], ["5254", "Eastern European movies"], ["58807", "French movies"], ["58886", "German movies"], ["61115", "Greek movies"], ["10463", "Indian movies"], ["58750", "Irish movies"], ["8221", "Italian Movies"], ["10398", "Japanese movies"], ["5685", "Korean movies"], ["1613", "Latin american movies"], ["5875", "Middle Eastern movies"], ["63782", "New Zealand movies"], ["11567", "Russian movies"], ["9292", "Scandinavian movies"], ["9196", "Southeast Asian Movies"], ["58741", "Spanish movies"], ["434295", "Taiwanese movies"], ["107570", "Thai Movies & TV"], ["1133133", "Turkish movies"]]}, {"name": "Horror Movies", "code": "8711", "items": [["10944", "Cult horror movies"], ["45028", "Deep-sea horror movies"], ["89585", "Horror comedy"], ["947", "Monster movies"], ["6998", "Satanic stories"], ["8646", "Slasher and serial killer movies"], ["42023", "Supernatural horror movies"], ["52147", "Teen screams"], ["75804", "Vampire horror movies"], ["75930", "Werewolf horror movies"], ["75405", "Zombie horror movies"], ["8195", "B-horror films"], ["6895", "Creature features"], ["4021", "Goofy horror movies"], ["2939659", "Survival horror"]]}, {"name": "Independent Movies", "code": "7077", "items": [["11079", "Experimental movies"], ["11804", "Independent action & adventure"], ["4195", "Independent comedies"], ["384", "Independent dramas"], ["3269", "Independent thrillers"], ["9916", "Romantic independent movies"]]}, {"name": "Music", "code": "1701", "items": [["32392", "Classic musicals"], ["52843", "Kids music"], ["10741", "Latin music"], ["13335", "Musicals"], ["13573", "Showbiz musicals"], ["55774", "Stage musicals"]]}, {"name": "Romantic Movies", "code": "8883", "items": [["31273", "Classic romantic movies"], ["36103", "Quirky romance"], ["5475", "Romantic Comedies"], ["1255", "Romantic dramas"], ["502675", "Romantic favorites"], ["9916", "Romantic independent movies"], ["35800", "Steamy romantic movies"]]}, {"name": "Sci-Fi & Fantasy", "code": "1492", "items": [["1568", "Action Sci-Fi & fantasy"], ["3327", "Alien Sci-Fi"], ["47147", "Classic Sci-Fi & fantasy"], ["9744", "Fantasy movies"], ["6926", "Sci-Fi adventure"], ["3916", "Sci-Fi dramas"], ["1694", "Sci-Fi horror movies"], ["11014", "Sci-Fi thrillers"]]}, {"name": "Sports Movies", "code": "4370", "items": [["12339", "Baseball movies"], ["12762", "Basketball movies"], ["12443", "Boxing movies"], ["12803", "Football movies"], ["8985", "Martial arts movies"], ["6695", "Martial arts, boxing & wrestling"], ["12549", "Soccer movies"], ["9327", "Sports & Fitness"], ["5286", "Sports comedies"], ["180", "Sports documentaries"], ["7243", "Sports dramas"], ["4582", "BMX & extreme riding"], ["49944", "Car movies"]]}, {"name": "TV Shows", "code": "83", "items": [["52117", "British TV Shows"], ["81240711", "Gentle British Reality TV"], ["46553", "Classic TV shows"], ["26146", "Crime TV shows"], ["74652", "Cult TV shows"], ["72436", "Food & travel"], ["27346", "Kids' TV"], ["67879", "Korean TV shows"], ["25804", "Military TV shows"], ["4814", "Miniseries"], ["9833", "Reality TV"], ["52780", "Science & nature"], ["1372", "TV Sci-Fi & fantasy"], ["10673", "TV action & adventure"], ["10375", "TV comedies"], ["10105", "TV documentaries"], ["11714", "TV dramas"], ["83059", "TV horror"], ["4366", "TV mysteries"]]}, {"name": "Valentine's Day Movie/Series", "code": "81576602", "items": [["11310", "Romantic Bollywood Movies"], ["1461331", "Romantic Korean TV Comedies"], ["26156", "Romantic TV Programs"], ["11781", "Steamy Movies"], ["50117", "Valentine's Day Movies"]]}, {"name": "Teen TV Shows", "code": "60951", "items": [["3519", "Teen comedies"], ["9299", "Teen dramas"], ["52147", "Teen screams"]]}, {"name": "Thrillers", "code": "8933", "items": [["43048", "Action thrillers"], ["46588", "Classic thrillers"], ["10499", "Crime thrillers"], ["31851", "Gangster movies"], ["83526", "Ominous Action Thrillers"], ["9994", "Mysteries"], ["10504", "Political thrillers"], ["5505", "Psychological thrillers"], ["11014", "Sci-Fi thrillers"], ["9147", "Spy thrillers"], ["972", "Steamy thrillers"], ["11140", "Supernatural thrillers"]]}, {"name": "Award-Winning Films and Series", "code": "", "items": [["89844", "Award-winning Films"], ["89814", "Award-winning TV Programs"], ["93108", "Award-winning Documentaries"], ["713151", "Award-winning TV war & politics"], ["84343", "Best Actor Oscar-winning Political Dramas"]]}, {"name": "Hidden Cult Classics", "code": "", "items": [["7627", "Cult Movies"], ["1252", "Campy Movies"], ["9434", "Cult Comedies"], ["4734", "Cult Sci-Fi & Fantasy"]]}, {"name": "Others", "code": "", "items": [["751423", "Kids' Faith & Spirituality"], ["34399", "All movies"], ["29764", "Art House Movies"], ["52858", "Epics"], ["11079", "Experimental movies"], ["52804", "Faith & spirituality movies"], ["9744", "Fantasy movies"], ["48553", "Courtroom Comedy Series"], ["15971", "Cerebral Courtroom Drama Movies"], ["26835", "Faith & Spirituality"], ["11660", "Courtroom Dramas based on real life"], ["7687", "Film noir"], ["31851", "Gangster movies"], ["839338", "Only on Netflix"], ["81466194", "90-Minute Movies"], ["1192582", "Binge-worthy British Crime TV shows"], ["81231348", "Chosen family"], ["1964512", "Cyberpunk"], ["3272152", "Don't watch hungry"], ["2013975", "Family movie night"], ["1143288", "Gal-pal TV shows"], ["3261672", "High-brow horror"], ["75480", "Irreverent TV comedies"], ["2953105", "K-Drama for beginners"], ["2974953", "Movies directed by women"], ["81278963", "Pop culture icons"], ["3053870", "Reluctant adults"], ["81226732", "Relentless crime thrillers"], ["81493295", "Schemers & scammers"], ["81615585", "Small town charm"], ["81238162", "Supernatural soaps"], ["81582488", "Swipe right"], ["81282911", "Stay at home, see the world"], ["2752022", "Team players"], ["2314106", "Totally awesome '80s"], ["3182735", "Watch in one weekend"], ["29733", "Cerebral Art House Movies"]]}];
 
-// State variables
-let filteredGenres = genres.slice();
+const categoryList = document.getElementById('categoryList');
+const itemsEl = document.getElementById('items');
+const searchEl = document.getElementById('search');
+const sortEl = document.getElementById('sort');
+const scopeEl = document.getElementById('scope');
+const resetBtn = document.getElementById('resetBtn');
+const toast = document.getElementById('toast');
 
-function renderCategories() {
-    const categoriesDiv = document.getElementById('categories');
-    categoriesDiv.innerHTML = '';
-    filteredGenres.forEach((genre) => {
-        const catDiv = document.createElement('div');
-        catDiv.classList.add('category');
-        // Category header row
-        const headerDiv = document.createElement('div');
-        headerDiv.classList.add('category-header');
+let activeCategory = null;
 
-        const nameSpan = document.createElement('span');
-        nameSpan.classList.add('category-name');
-        nameSpan.textContent = genre.name;
-
-        const codeSpan = document.createElement('span');
-        codeSpan.classList.add('category-code');
-        codeSpan.textContent = genre.code;
-
-        const buttonsDiv = document.createElement('div');
-        buttonsDiv.classList.add('buttons');
-
-        // Copy code button
-        const copyBtn = document.createElement('button');
-        copyBtn.textContent = 'Copy';
-        copyBtn.classList.add('copy-btn');
-        copyBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            navigator.clipboard.writeText(genre.code).then(() => {
-                copyBtn.textContent = 'Copied';
-                setTimeout(() => copyBtn.textContent = 'Copy', 1000);
-            });
-        });
-
-        // Open Netflix button
-        const openBtn = document.createElement('button');
-        openBtn.textContent = 'Open';
-        openBtn.classList.add('open-btn');
-        openBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            window.open('https://www.netflix.com/browse/genre/' + genre.code, '_blank');
-        });
-
-        // Toggle subgenres button (only if has subgenres)
-        let toggleBtn;
-        if (genre.subgenres && genre.subgenres.length > 0) {
-            toggleBtn = document.createElement('button');
-            toggleBtn.textContent = 'Subgenres';
-            toggleBtn.classList.add('toggle-btn');
-        }
-        buttonsDiv.appendChild(copyBtn);
-        buttonsDiv.appendChild(openBtn);
-        if (toggleBtn) buttonsDiv.appendChild(toggleBtn);
-
-        headerDiv.appendChild(nameSpan);
-        headerDiv.appendChild(codeSpan);
-        headerDiv.appendChild(buttonsDiv);
-        catDiv.appendChild(headerDiv);
-
-        // Subgenre container
-        if (genre.subgenres && genre.subgenres.length > 0) {
-            const subDiv = document.createElement('div');
-            subDiv.classList.add('subgenres', 'hidden');
-            genre.subgenres.forEach(sub => {
-                const row = document.createElement('div');
-                row.classList.add('subgenre');
-                const sn = document.createElement('span');
-                sn.classList.add('subgenre-name');
-                sn.textContent = sub.name;
-                const sc = document.createElement('span');
-                sc.classList.add('subgenre-code');
-                sc.textContent = sub.code;
-                row.appendChild(sn);
-                row.appendChild(sc);
-                row.addEventListener('click', () => {
-                    window.open('https://www.netflix.com/browse/genre/' + sub.code, '_blank');
-                });
-                subDiv.appendChild(row);
-            });
-            catDiv.appendChild(subDiv);
-            toggleBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                subDiv.classList.toggle('hidden');
-            });
-        }
-        categoriesDiv.appendChild(catDiv);
-    });
+function showToast(msg) {
+  toast.textContent = msg;
+  toast.classList.add('show');
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(() => toast.classList.remove('show'), 1200);
 }
 
-function sortGenres(by) {
-    if (by === 'name') {
-        filteredGenres.sort((a, b) => a.name.localeCompare(b.name));
-    } else if (by === 'code') {
-        filteredGenres.sort((a, b) => parseInt(a.code) - parseInt(b.code));
-    }
-    renderCategories();
+function openCode(code) {
+  if (!code) return;
+  window.open(`https://www.netflix.com/browse/genre/${code}`, '_blank', 'noopener,noreferrer');
 }
 
-function filterGenres(query) {
-    const q = query.toLowerCase();
-    filteredGenres = genres.filter(g => {
-        if (g.name.toLowerCase().includes(q) || g.code.includes(q)) return true;
-        return g.subgenres.some(s => s.name.toLowerCase().includes(q) || s.code.includes(q));
-    });
-    renderCategories();
+function copyText(text) {
+  navigator.clipboard.writeText(String(text));
+  showToast(`Copied ${text}`);
 }
 
-document.getElementById('sort').addEventListener('change', (e) => sortGenres(e.target.value));
-document.getElementById('search').addEventListener('input', (e) => filterGenres(e.target.value));
-
-// Service worker registration
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js');
-    });
+function normalize(s) {
+  return String(s || '').toLowerCase().replace(/[’']/g, "'");
 }
 
-sortGenres('name');
+function currentCategories() {
+  const q = normalize(searchEl.value.trim());
+  const scope = scopeEl.value;
+  let arr = DATA.map((cat, idx) => ({ ...cat, _idx: idx }))
+    .filter(cat => {
+      if (scope === 'coded') return !!cat.code;
+      if (scope === 'special') return !cat.code;
+      return true;
+    })
+    .map(cat => {
+      const matchesCategory = normalize(cat.name).includes(q) || normalize(cat.code).includes(q);
+      const matchedItems = !q ? cat.items : cat.items.filter(([code, name]) => normalize(name).includes(q) || normalize(code).includes(q));
+      if (!q || matchesCategory || matchedItems.length) {
+        return { ...cat, filteredItems: q && !matchesCategory ? matchedItems : cat.items };
+      }
+      return null;
+    })
+    .filter(Boolean);
+
+  const sort = sortEl.value;
+  if (sort === 'az') arr.sort((a,b) => a.name.localeCompare(b.name));
+  if (sort === 'count') arr.sort((a,b) => b.items.length - a.items.length || a.name.localeCompare(b.name));
+  if (sort === 'code') arr.sort((a,b) => {
+    const ac = a.code ? parseInt(a.code, 10) : Number.MAX_SAFE_INTEGER;
+    const bc = b.code ? parseInt(b.code, 10) : Number.MAX_SAFE_INTEGER;
+    return ac - bc || a.name.localeCompare(b.name);
+  });
+  return arr;
+}
+
+function renderSidebar(categories) {
+  categoryList.innerHTML = '';
+  document.getElementById('sidebarCount').textContent = `${categories.length} visible`;
+
+  const btnAll = document.createElement('button');
+  btnAll.className = `category-btn ${activeCategory === null ? 'active' : ''}`;
+  btnAll.innerHTML = `<div class="category-row"><div class="category-title">All categories</div><div class="small">${categories.reduce((n,c)=>n+c.filteredItems.length,0)} entries</div></div><div class="category-sub"><span>Browse full filtered result set</span></div>`;
+  btnAll.onclick = () => { activeCategory = null; render(); };
+  categoryList.appendChild(btnAll);
+
+  categories.forEach(cat => {
+    const btn = document.createElement('button');
+    btn.className = `category-btn ${activeCategory === cat.name ? 'active' : ''}`;
+    btn.innerHTML = `
+      <div class="category-row">
+        <div class="category-title">${cat.name}</div>
+        <div class="small">${cat.filteredItems.length}</div>
+      </div>
+      <div class="category-sub">
+        <span>${cat.code ? 'Main code ' + cat.code : 'Special group'}</span>
+        <span>${cat.items.length} total entries</span>
+      </div>`;
+    btn.onclick = () => { activeCategory = cat.name; render(); };
+    categoryList.appendChild(btn);
+  });
+}
+
+function renderSummary(categories, visibleItems, focusedCat) {
+  document.getElementById('metricCats').textContent = focusedCat ? '1' : categories.length;
+  document.getElementById('metricCodes').textContent = visibleItems.length;
+  document.getElementById('metricMain').textContent = focusedCat?.code || '-';
+  document.getElementById('metricMatches').textContent = searchEl.value.trim() ? visibleItems.length : 0;
+  document.getElementById('focusTitle').textContent = focusedCat ? focusedCat.name : 'All categories';
+  document.getElementById('focusSub').textContent = focusedCat
+    ? `${focusedCat.items.length} source entries in this category group.`
+    : 'Browse the full code catalog from the uploaded PDF.';
+  document.getElementById('focusCode').textContent = focusedCat
+    ? (focusedCat.code ? `Main code: ${focusedCat.code}` : 'Special grouping')
+    : 'All results';
+}
+
+function renderItems(visibleItems, focusedCat) {
+  itemsEl.innerHTML = '';
+  document.getElementById('entryNote').textContent = focusedCat
+    ? `Showing ${visibleItems.length} entries inside ${focusedCat.name}.`
+    : `Showing ${visibleItems.length} entries across all visible categories.`;
+
+  if (!visibleItems.length) {
+    itemsEl.innerHTML = `<div class="empty">No matching codes found.</div>`;
+    return;
+  }
+
+  visibleItems.forEach(item => {
+    const div = document.createElement('article');
+    div.className = 'item';
+    div.innerHTML = `
+      <div>
+        <div class="item-name">${item.name}</div>
+        <div class="item-meta">${item.group}${item.groupCode ? ' · main code ' + item.groupCode : ' · special group'}</div>
+      </div>
+      <div class="item-actions">
+        <div class="chip">${item.code}</div>
+        <button class="btn" data-copy="${item.code}">Copy</button>
+        <button class="btn" data-open="${item.code}">Open</button>
+      </div>
+    `;
+    itemsEl.appendChild(div);
+  });
+
+  itemsEl.querySelectorAll('[data-copy]').forEach(btn => btn.onclick = () => copyText(btn.dataset.copy));
+  itemsEl.querySelectorAll('[data-open]').forEach(btn => btn.onclick = () => openCode(btn.dataset.open));
+}
+
+function render() {
+  const cats = currentCategories();
+  if (activeCategory && !cats.some(c => c.name === activeCategory)) activeCategory = null;
+  const focusedCat = activeCategory ? cats.find(c => c.name === activeCategory) : null;
+  const visibleItems = (focusedCat
+    ? focusedCat.filteredItems.map(([code,name]) => ({ code, name, group: focusedCat.name, groupCode: focusedCat.code }))
+    : cats.flatMap(cat => cat.filteredItems.map(([code,name]) => ({ code, name, group: cat.name, groupCode: cat.code }))));
+  renderSidebar(cats);
+  renderSummary(cats, visibleItems, focusedCat);
+  renderItems(visibleItems, focusedCat);
+}
+
+searchEl.addEventListener('input', render);
+sortEl.addEventListener('change', render);
+scopeEl.addEventListener('change', render);
+resetBtn.addEventListener('click', () => {
+  searchEl.value = '';
+  sortEl.value = 'default';
+  scopeEl.value = 'all';
+  activeCategory = null;
+  render();
+});
+
+render();
 </script>
 </body>
 </html>
