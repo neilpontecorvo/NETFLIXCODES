@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Netflix Secret Codes Explorer</title>
+<style>
+:root{--bg:#111;--panel:#1b1b1b;--panel2:#232323;--line:#363636;--text:#f5f5f5;--muted:#b3b3b3;--accent:#e50914;--radius:16px;}
+*{box-sizing:border-box} html,body{margin:0;padding:0;background:linear-gradient(180deg,#101010,#171717);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif} body{min-height:100vh}
+.wrap{max-width:1100px;margin:0 auto;padding:14px} .card{background:rgba(27,27,27,.96);border:1px solid rgba(255,255,255,.06);border-radius:var(--radius);box-shadow:0 12px 34px rgba(0,0,0,.35)} .hero{padding:18px;margin-bottom:14px}
+h1{margin:0 0 8px;font-size:clamp(28px,5vw,42px);line-height:1.05} .accent{color:var(--accent)} .sub{color:var(--muted);line-height:1.45;margin-bottom:14px}
+.toolbar{display:grid;grid-template-columns:1fr;gap:10px} input,select,button,a.btn{width:100%;min-height:48px;border-radius:12px;border:1px solid var(--line);background:var(--panel2);color:var(--text);padding:12px 14px;font-size:15px;text-decoration:none} input::placeholder{color:#888} input:focus,select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 4px rgba(229,9,20,.12)} button,a.primary{background:linear-gradient(180deg,var(--accent),#bf0811);border-color:#8f0910;font-weight:800;cursor:pointer}
+.meta{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px} .stat{padding:12px;border:1px solid var(--line);border-radius:14px;background:#171717} .stat .k{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)} .stat .v{margin-top:4px;font-size:24px;font-weight:800}
+.layout{display:grid;grid-template-columns:1fr;gap:14px} .panel{padding:14px} .panel h2{margin:0 0 12px;font-size:18px} .category-list{display:grid;gap:8px;max-height:42vh;overflow:auto}
+.category{padding:12px;border-radius:12px;border:1px solid var(--line);background:#181818;cursor:pointer;display:flex;justify-content:space-between;gap:10px;align-items:center} .category.active{border-color:rgba(229,9,20,.55);background:rgba(229,9,20,.11)} .category-name{font-weight:700} .muted{color:var(--muted)}
+.pill{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;border:1px solid rgba(229,9,20,.35);background:rgba(229,9,20,.11);font-weight:700} .head{display:flex;flex-direction:column;gap:10px;margin-bottom:14px} .actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid{display:grid;grid-template-columns:1fr;gap:10px} .tile{padding:14px;border-radius:14px;border:1px solid var(--line);background:linear-gradient(180deg,#202020,#171717)} .tile-title{font-weight:700;line-height:1.35;margin-bottom:10px} .code-row{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px} .code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:#ff3b45;font-weight:800} .mini{display:grid;grid-template-columns:1fr 1fr;gap:8px} .empty{padding:22px;border:1px dashed #444;border-radius:14px;text-align:center;color:var(--muted)}
+.toast{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);background:rgba(0,0,0,.9);color:#fff;border:1px solid #444;border-radius:999px;padding:10px 14px;opacity:0;pointer-events:none;transition:opacity .2s ease;z-index:99} .toast.show{opacity:1} .foot{margin-top:12px;font-size:12px;color:var(--muted);line-height:1.45}
+@media (min-width:860px){.toolbar{grid-template-columns:1.2fr .8fr .8fr} .layout{grid-template-columns:320px 1fr} .grid{grid-template-columns:repeat(2,minmax(0,1fr))} .head{flex-direction:row;justify-content:space-between;align-items:center} .actions{width:auto;grid-template-columns:auto auto}}
+</style>
+
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#111111">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+
+</head>
+<body>
+<div class="wrap">
+<section class="card hero">
+<h1><span class="accent">Netflix</span> Secret Codes Explorer</h1>
+<div class="sub">PWA-ready Netflix codes explorer. It works as a normal page from a local file, but install/offline PWA features require it to be served over HTTPS or localhost. Search categories or subgenres, open the Netflix URL, or copy the code.</div>
+<div class="toolbar">
+<input id="searchInput" type="text" placeholder="Search category or subgenre" />
+<select id="scopeSelect"><option value="all">All categories</option></select>
+<select id="sortSelect"><option value="alpha">Sort A–Z</option><option value="code">Sort by code</option></select>
+<button id="installBtn" type="button">Install app</button>
+</div>
+<div class="meta">
+<div class="stat"><div class="k">Main Categories</div><div class="v" id="statCategories">0</div></div>
+<div class="stat"><div class="k">Subgenres</div><div class="v" id="statSubgenres">0</div></div>
+<div class="stat"><div class="k">Matches</div><div class="v" id="statMatches">0</div></div>
+</div>
+</section>
+<section class="layout">
+<aside class="card panel"><h2>Categories</h2><div id="categoryList" class="category-list"></div></aside>
+<main class="card panel">
+<div class="head">
+<div><div class="pill" id="currentPill">Select a category</div><div class="foot" id="categoryDescription">Tap a category on the left or search above.</div></div>
+<div class="actions"><a id="openCategoryBtn" class="btn primary" href="#" target="_blank" rel="noopener noreferrer">Open category</a><button id="copyCategoryBtn" type="button">Copy category code</button></div>
+</div>
+<div id="subgenreGrid" class="grid"></div>
+</main>
+</section>
+</div>
+<div id="toast" class="toast">Copied</div>
+<script>
+const genres = {
+            "genres": [
+                {
+                    "name": "Sci-Fi & Fantasy",
+                    "code": 1492,
+                    "description": "Futuristic tales and magical worlds.",
+                    "subgenres": [
+                        {"name": "Alien Sci-Fi", "code": 3327},
+                        {"name": "Classic Sci-Fi & Fantasy", "code": 47147},
+                        {"name": "Cult Sci-Fi & Fantasy", "code": 4734},
+                        {"name": "Fantasy Movies", "code": 9744},
+                        {"name": "Sci-Fi Adventure", "code": 6926},
+                        {"name": "Sci-Fi Dramas", "code": 3916},
+                        {"name": "Sci-Fi Horror Movies", "code": 1694},
+                        {"name": "Sci-Fi Thrillers", "code": 11014}
+                    ]
+                },
+                {
+                    "name": "Sports",
+                    "code": 4370,
+                    "description": "Athletic competition and sports culture.",
+                    "subgenres": [
+                        {"name": "Baseball Movies", "code": 12339},
+                        {"name": "Basketball Movies", "code": 12762},
+                        {"name": "Boxing Movies", "code": 12443},
+                        {"name": "Football Movies", "code": 12803},
+                        {"name": "Martial Arts, Boxing & Wrestling", "code": 6695},
+                        {"name": "Soccer Movies", "code": 12549},
+                        {"name": "Sports & Fitness", "code": 9327}
+                    ]
+                },
+                {
+                    "name": "Thrillers",
+                    "code": 8933,
+                    "description": "Suspenseful narratives with high tension.",
+                    "subgenres": [
+                        {"name": "Crime Thrillers", "code": 10499},
+                        {"name": "Foreign Thrillers", "code": 10306},
+                        {"name": "Independent Thrillers", "code": 3269},
+                        {"name": "Gangster Movies", "code": 31851},
+                        {"name": "Psychological Thrillers", "code": 5505},
+                        {"name": "Political Thrillers", "code": 10504},
+                        {"name": "Mysteries", "code": 9994},
+                        {"name": "Spy Thrillers", "code": 9147},
+                        {"name": "Steamy Thrillers", "code": 972},
+                        {"name": "Supernatural Thrillers", "code": 11140}
+                    ]
+                },
+                {
+                    "name": "Action & Adventure",
+                    "code": 1365,
+                    "description": "High-energy films and series, from blockbusters to niche adventures.",
+                    "subgenres": [
+                        {"name": "Action Comedies", "code": 43040},
+                        {"name": "Action Thrillers", "code": 43048},
+                        {"name": "Adventures", "code": 7442},
+                        {"name": "Asian Action Movies", "code": 77232},
+                        {"name": "Classic Action & Adventure", "code": 46576},
+                        {"name": "Comic Book & Superhero Movies", "code": 10118},
+                        {"name": "Crime Action & Adventure", "code": 9584},
+                        {"name": "Foreign Action & Adventure", "code": 11828},
+                        {"name": "Martial Arts Movies", "code": 8985},
+                        {"name": "Military Action & Adventure", "code": 2125},
+                        {"name": "Spy Action & Adventure", "code": 10702},
+                        {"name": "Westerns", "code": 7700},
+                        {"name": "Emotional Action & Adventure", "code": 2235},
+                        {"name": "Raunchy Action & Adventure", "code": 2884}
+                    ]
+                },
+                {
+                    "name": "Animation",
+                    "code": 4698,
+                    "description": "Animated features for all ages, including adult-oriented content.",
+                    "subgenres": [
+                        {"name": "Adult Animation", "code": 11881}
+                    ]
+                },
+                {
+                    "name": "Anime",
+                    "code": 7424,
+                    "description": "Japanese animation across action, comedy, fantasy, and more.",
+                    "subgenres": [
+                        {"name": "Anime Action", "code": 2653},
+                        {"name": "Anime Comedies", "code": 9302},
+                        {"name": "Anime Dramas", "code": 452},
+                        {"name": "Anime Fantasy", "code": 11146},
+                        {"name": "Anime Features", "code": 3063},
+                        {"name": "Anime Horror", "code": 10695},
+                        {"name": "Anime Sci-Fi", "code": 2729},
+                        {"name": "Anime Series", "code": 6721}
+                    ]
+                },
+                {
+                    "name": "Children & Family Films",
+                    "code": 783,
+                    "description": "Family-friendly movies and shows, sorted by age and theme.",
+                    "subgenres": [
+                        {"name": "Animal Tales", "code": 5507},
+                        {"name": "Disney", "code": 67673},
+                        {"name": "Education for Kids", "code": 10659},
+                        {"name": "Family Features", "code": 51056},
+                        {"name": "Kids Music", "code": 52843},
+                        {"name": "Kids TV", "code": 27346},
+                        {"name": "Movies Based on Kids' Books", "code": 10056},
+                        {"name": "Movies for Ages 0-2", "code": 6796},
+                        {"name": "Movies for Ages 2-4", "code": 6218},
+                        {"name": "Movies for Ages 5-7", "code": 5455},
+                        {"name": "Movies for Ages 8-10", "code": 561},
+                        {"name": "Movies for Ages 11-12", "code": 6962},
+                        {"name": "TV Cartoons", "code": 11177},
+                        {"name": "Kids Faith & Spirituality", "code": 751423}
+                    ]
+                },
+                {
+                    "name": "Classics",
+                    "code": 31574,
+                    "description": "Timeless films from early cinema eras.",
+                    "subgenres": [
+                        {"name": "Classic Comedies", "code": 31694},
+                        {"name": "Classic Dramas", "code": 29809},
+                        {"name": "Classic Foreign Movies", "code": 32473},
+                        {"name": "Classic Sci-Fi & Fantasy", "code": 47147},
+                        {"name": "Classic Thrillers", "code": 46588},
+                        {"name": "Classic War Movies", "code": 48744},
+                        {"name": "Classic Westerns", "code": 47465},
+                        {"name": "Epics", "code": 52858},
+                        {"name": "Film Noir", "code": 7687},
+                        {"name": "Silent Movies", "code": 53310}
+                    ]
+                },
+                {
+                    "name": "Comedy",
+                    "code": 6548,
+                    "description": "Humorous content, including stand-up and satires.",
+                    "subgenres": [
+                        {"name": "Dark Comedies", "code": 869},
+                        {"name": "Foreign Comedies", "code": 4426},
+                        {"name": "Late Night Comedies", "code": 1402},
+                        {"name": "Mockumentaries", "code": 26},
+                        {"name": "Political Comedies", "code": 2700},
+                        {"name": "Romantic Comedies", "code": 5475},
+                        {"name": "Satires", "code": 4922},
+                        {"name": "Screwball Comedies", "code": 9702},
+                        {"name": "Slapstick Comedies", "code": 10256},
+                        {"name": "Sports Comedies", "code": 5286},
+                        {"name": "Stand-Up Comedy", "code": 11559},
+                        {"name": "Teen Comedies", "code": 3519},
+                        {"name": "Goofy Stand-up Comedy", "code": 1088},
+                        {"name": "Stand-up & Chat Shows", "code": 1516534},
+                        {"name": "Emotional Comedies", "code": 323},
+                        {"name": "Raunchy Comedies on Blu-ray", "code": 2969},
+                        {"name": "Black Sitcoms", "code": 81416282}
+                    ]
+                },
+                {
+                    "name": "Documentaries",
+                    "code": 6839,
+                    "description": "Real-world stories, from crime to nature.",
+                    "subgenres": [
+                        {"name": "Biographical Documentaries", "code": 3652},
+                        {"name": "Crime Documentaries", "code": 9875},
+                        {"name": "Foreign Documentaries", "code": 5161},
+                        {"name": "Historical Documentaries", "code": 5349},
+                        {"name": "Military Documentaries", "code": 4006},
+                        {"name": "Music & Concert Documentaries", "code": 90361},
+                        {"name": "Political Documentaries", "code": 7018},
+                        {"name": "Religious Documentaries", "code": 10005},
+                        {"name": "Science & Nature Documentaries", "code": 2595},
+                        {"name": "Social & Cultural Documentaries", "code": 3675},
+                        {"name": "Sports Documentaries", "code": 180},
+                        {"name": "Travel & Adventure Documentaries", "code": 1159},
+                        {"name": "Emotional Documentaries", "code": 1271},
+                        {"name": "Award-Winning Documentaries", "code": 93108},
+                        {"name": "Courtroom Documentaries", "code": 1078}
+                    ]
+                },
+                {
+                    "name": "Drama",
+                    "code": 5763,
+                    "description": "Emotional narratives, including period pieces and biopics.",
+                    "subgenres": [
+                        {"name": "Biographical Dramas", "code": 3179},
+                        {"name": "Courtroom Dramas", "code": 52858},
+                        {"name": "Crime Dramas", "code": 6889},
+                        {"name": "Dramas Based on Books", "code": 4961},
+                        {"name": "Dramas Based on Real Life", "code": 3653},
+                        {"name": "Foreign Dramas", "code": 2150},
+                        {"name": "Gay & Lesbian Dramas", "code": 500},
+                        {"name": "Independent Dramas", "code": 384},
+                        {"name": "Military Dramas", "code": 11},
+                        {"name": "Period Pieces", "code": 12123},
+                        {"name": "Political Dramas", "code": 6616},
+                        {"name": "Romantic Dramas", "code": 1255},
+                        {"name": "Showbiz Dramas", "code": 5012},
+                        {"name": "Social Issue Dramas", "code": 3947},
+                        {"name": "Sports Dramas", "code": 7243},
+                        {"name": "Tearjerkers", "code": 6384},
+                        {"name": "Teen Dramas", "code": 9299},
+                        {"name": "Emotional Dramas from the 1920s", "code": 1182},
+                        {"name": "Emotional Dramas from the 1930s", "code": 1209},
+                        {"name": "Emotional Dramas from the 1940s", "code": 1236},
+                        {"name": "Emotional Dramas from the 1950s", "code": 1259},
+                        {"name": "Emotional Dramas from the 1960s", "code": 1289},
+                        {"name": "Emotional Dramas from the 1970s", "code": 1314},
+                        {"name": "Emotional Dramas from the 1980s", "code": 1344},
+                        {"name": "Emotional Independent Dramas", "code": 3743},
+                        {"name": "Emotional Political Dramas", "code": 3874},
+                        {"name": "Emotional Psychological Dramas", "code": 352},
+                        {"name": "Emotional Teen Dramas", "code": 1593}
+                    ]
+                },
+                {
+                    "name": "Horror",
+                    "code": 8711,
+                    "description": "Spine-chilling tales, from monsters to slashers.",
+                    "subgenres": [
+                        {"name": "B-Horror Movies", "code": 8195},
+                        {"name": "Creature Features", "code": 6895},
+                        {"name": "Cult Horror Movies", "code": 10944},
+                        {"name": "Deep Sea Horror Movies", "code": 45028},
+                        {"name": "Foreign Horror Movies", "code": 8654},
+                        {"name": "Goofy Horror Movies", "code": 4021},
+                        {"name": "Horror Comedy", "code": 89585},
+                        {"name": "Monster Movies", "code": 947},
+                        {"name": "Satanic Stories", "code": 6998},
+                        {"name": "Slasher & Serial Killer Movies", "code": 8646},
+                        {"name": "Supernatural Horror Movies", "code": 42023},
+                        {"name": "Survival Horror", "code": 2939659},
+                        {"name": "Teen Screams", "code": 52147},
+                        {"name": "Vampire Horror Movies", "code": 75804},
+                        {"name": "Werewolf Horror Movies", "code": 75930},
+                        {"name": "Zombie Horror Movies", "code": 75405},
+                        {"name": "Raunchy B-Horror Movies", "code": 1659},
+                        {"name": "Raunchy Slasher and Serial Killer Movies", "code": 3607}
+                    ]
+                },
+                {
+                    "name": "Music",
+                    "code": 1701,
+                    "description": "Concerts, musicals, and soundtracks-focused content.",
+                    "subgenres": [
+                        {"name": "Classic Musicals", "code": 32392},
+                        {"name": "Country & Western/Folk", "code": 1105},
+                        {"name": "Disney Musicals", "code": 59433},
+                        {"name": "Jazz & Easy Listening", "code": 10271},
+                        {"name": "Latin Music", "code": 10741},
+                        {"name": "Musicals", "code": 13335},
+                        {"name": "Rock & Pop Concerts", "code": 3278},
+                        {"name": "Showbiz Musicals", "code": 13573},
+                        {"name": "Stage Musicals", "code": 55774},
+                        {"name": "Urban & Dance Concerts", "code": 9472},
+                        {"name": "World Music Concerts", "code": 2856}
+                    ]
+                },
+                {
+                    "name": "Romance",
+                    "code": 8883,
+                    "description": "Heartfelt stories and romantic comedies.",
+                    "subgenres": [
+                        {"name": "Classic Romantic Movies", "code": 31273},
+                        {"name": "Quirky Romance", "code": 36103},
+                        {"name": "Romantic Favorites", "code": 502675},
+                        {"name": "Romantic Foreign Movies", "code": 7153},
+                        {"name": "Romantic Independent Movies", "code": 9916},
+                        {"name": "Steamy Romantic Movies", "code": 35800},
+                        {"name": "Classic Romantic Dramas", "code": 30267},
+                        {"name": "Date Night", "code": 81398312},
+                        {"name": "Emotional Films", "code": 4136},
+                        {"name": "First-Love Dramas", "code": 8191002}
+                    ]
+                }
+            ]
+        };
+const data = genres.genres;
+const els = {
+  search: document.getElementById('searchInput'), scope: document.getElementById('scopeSelect'), sort: document.getElementById('sortSelect'),
+  categoryList: document.getElementById('categoryList'), subgenreGrid: document.getElementById('subgenreGrid'), pill: document.getElementById('currentPill'), desc: document.getElementById('categoryDescription'),
+  openCategoryBtn: document.getElementById('openCategoryBtn'), copyCategoryBtn: document.getElementById('copyCategoryBtn'), toast: document.getElementById('toast'),
+  statCategories: document.getElementById('statCategories'), statSubgenres: document.getElementById('statSubgenres'), statMatches: document.getElementById('statMatches')
+};
+let selectedCode = data[0]?.code || null;
+function showToast(msg){ els.toast.textContent = msg; els.toast.classList.add('show'); clearTimeout(showToast.t); showToast.t = setTimeout(()=>els.toast.classList.remove('show'), 1300); }
+async function copyText(text){ try { await navigator.clipboard.writeText(String(text)); showToast('Copied: ' + text); } catch(e) { showToast('Copy blocked'); } }
+function categoryUrl(code){ return `https://www.netflix.com/browse/genre/${code}`; }
+function getFiltered(){
+  const q = els.search.value.trim().toLowerCase();
+  const scope = els.scope.value;
+  let items = [...data];
+  if (scope !== 'all') items = items.filter(x => String(x.code) === scope);
+  items = items.filter(cat => !q || cat.name.toLowerCase().includes(q) || cat.subgenres.some(s => s.name.toLowerCase().includes(q) || String(s.code).includes(q)));
+  if (els.sort.value === 'alpha') items.sort((a,b) => a.name.localeCompare(b.name)); else items.sort((a,b) => a.code - b.code);
+  return items;
+}
+function renderCategories(){
+  const filtered = getFiltered();
+  els.statMatches.textContent = filtered.length;
+  if (!filtered.some(x => x.code === selectedCode)) selectedCode = filtered[0]?.code || null;
+  els.categoryList.innerHTML = filtered.map(cat => `<div class="category ${cat.code===selectedCode?'active':''}" data-code="${cat.code}"><div><div class="category-name">${cat.name}</div><div class="muted">${cat.subgenres.length} subgenres</div></div><div class="code">${cat.code}</div></div>`).join('') || '<div class="empty">No categories match.</div>';
+  [...els.categoryList.querySelectorAll('.category')].forEach(el => el.addEventListener('click', () => { selectedCode = Number(el.dataset.code); render(); }));
+}
+function renderDetail(){
+  const filtered = getFiltered();
+  const current = filtered.find(x => x.code === selectedCode) || filtered[0] || null;
+  if (!current) {
+    els.pill.textContent = 'No match'; els.desc.textContent = 'Clear the search to restore the full list.'; els.subgenreGrid.innerHTML = '<div class="empty">No subgenres to display.</div>'; els.openCategoryBtn.removeAttribute('href'); return;
+  }
+  selectedCode = current.code;
+  els.pill.textContent = `${current.name} · ${current.code}`;
+  els.desc.textContent = current.description || 'Netflix secret code category.';
+  els.openCategoryBtn.href = categoryUrl(current.code);
+  els.copyCategoryBtn.onclick = () => copyText(current.code);
+  const q = els.search.value.trim().toLowerCase();
+  const subs = current.subgenres.filter(s => !q || current.name.toLowerCase().includes(q) || s.name.toLowerCase().includes(q) || String(s.code).includes(q));
+  els.subgenreGrid.innerHTML = subs.map(s => `<article class="tile"><div class="tile-title">${s.name}</div><div class="code-row"><span class="muted">Code</span><span class="code">${s.code}</span></div><div class="mini"><a class="btn primary" href="${categoryUrl(s.code)}" target="_blank" rel="noopener noreferrer">Open</a><button type="button" data-copy="${s.code}">Copy</button></div></article>`).join('') || '<div class="empty">No subgenres match inside this category.</div>';
+  [...els.subgenreGrid.querySelectorAll('[data-copy]')].forEach(btn => btn.addEventListener('click', () => copyText(btn.dataset.copy)));
+}
+function initScope(){ els.scope.innerHTML = '<option value="all">All categories</option>' + data.map(cat => `<option value="${cat.code}">${cat.name} (${cat.code})</option>`).join(''); }
+function initStats(){ els.statCategories.textContent = data.length; els.statSubgenres.textContent = data.reduce((n,cat)=>n+cat.subgenres.length,0); }
+function render(){ renderCategories(); renderDetail(); }
+initScope(); initStats();
+els.search.addEventListener('input', render); els.scope.addEventListener('change', render); els.sort.addEventListener('change', render); render();
+
+let deferredPrompt = null;
+const installBtn = document.getElementById('installBtn');
+if (installBtn) {
+  installBtn.style.display = 'none';
+  installBtn.addEventListener('click', async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const choice = await deferredPrompt.userChoice;
+    deferredPrompt = null;
+    installBtn.style.display = 'none';
+    showToast(choice.outcome === 'accepted' ? 'App install started' : 'Install dismissed');
+  });
+}
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  if (installBtn) installBtn.style.display = 'block';
+});
+window.addEventListener('appinstalled', () => {
+  showToast('App installed');
+  if (installBtn) installBtn.style.display = 'none';
+});
+if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  });
+}
+
+</script>
+</body>
+</html>
