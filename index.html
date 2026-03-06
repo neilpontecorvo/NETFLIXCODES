@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -181,6 +180,58 @@ button.action {
   color: var(--muted);
   font-size: 12px;
 }
+.category-group {
+  display: grid;
+  gap: 8px;
+}
+.category-btn {
+  position: relative;
+}
+.category-chevron {
+  font-size: 14px;
+  color: var(--muted);
+  transition: transform .18s ease;
+}
+.category-btn.expanded .category-chevron {
+  transform: rotate(90deg);
+  color: #dce7ff;
+}
+.subcategory-panel {
+  display: grid;
+  gap: 6px;
+  padding: 0 8px 8px 8px;
+}
+.subcategory-row {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0,1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  background: rgba(255,255,255,.03);
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+}
+.subcategory-row:hover {
+  border-color: rgba(229,9,20,.26);
+  background: rgba(255,255,255,.05);
+}
+.subcategory-name {
+  font-size: 13px;
+  line-height: 1.3;
+}
+.subcategory-code {
+  font-size: 12px;
+  color: #ffd7da;
+  border: 1px solid rgba(229,9,20,.22);
+  background: rgba(229,9,20,.07);
+  border-radius: 999px;
+  padding: 6px 10px;
+  white-space: nowrap;
+}
 .main {
   display:grid;
   gap: 18px;
@@ -304,13 +355,6 @@ footer {
     <div class="title-wrap">
       <div>
         <h1>Netflix Codes Explorer</h1>
-        <div class="subtitle">Rebuilt as a complete, cleaner catalog app using the uploaded <strong>Netflix Codes.pdf</strong>. This version includes every category and subgenre/code parsed from the 11-page source file.</div>
-        <div class="badges">
-          <div class="badge">25 category groups</div>
-          <div class="badge">301 code entries</div>
-          <div class="badge">Modern responsive GUI</div>
-          <div class="badge">Direct Netflix open links</div>
-        </div>
       </div>
     </div>
     <div class="controls">
@@ -346,7 +390,7 @@ footer {
         <div class="main-head">
           <div>
             <h2 id="focusTitle">All categories</h2>
-            <div class="small" id="focusSub">Browse the full code catalog from the uploaded PDF.</div>
+            <div class="small" id="focusSub">Browse the full code catalog.</div>
           </div>
           <div class="chip" id="focusCode">All results</div>
         </div>
@@ -361,10 +405,10 @@ footer {
       <section class="panel list-wrap">
         <div class="main-head">
           <h2>Entries</h2>
-          <div class="small" id="entryNote">Open or copy any code.</div>
+          <div class="small" id="entryNote">Copy or open any visible code.</div>
         </div>
         <div class="items" id="items"></div>
-        <footer>Source dataset: uploaded Netflix Codes.pdf. Interface rebuilt for cleaner navigation, full-code coverage, and easier Android/Desktop use.</footer>
+
       </section>
     </main>
   </div>
@@ -384,6 +428,7 @@ const resetBtn = document.getElementById('resetBtn');
 const toast = document.getElementById('toast');
 
 let activeCategory = null;
+let expandedCategories = new Set();
 
 function showToast(msg) {
   toast.textContent = msg;
@@ -447,21 +492,60 @@ function renderSidebar(categories) {
   categoryList.appendChild(btnAll);
 
   categories.forEach(cat => {
+    const group = document.createElement('div');
+    group.className = 'category-group';
+
+    const expanded = expandedCategories.has(cat.name);
     const btn = document.createElement('button');
-    btn.className = `category-btn ${activeCategory === cat.name ? 'active' : ''}`;
+    btn.className = `category-btn ${activeCategory === cat.name ? 'active' : ''} ${expanded ? 'expanded' : ''}`;
     btn.innerHTML = `
       <div class="category-row">
         <div class="category-title">${cat.name}</div>
-        <div class="small">${cat.filteredItems.length}</div>
+        <div class="category-row">
+          <div class="small">${cat.filteredItems.length}</div>
+          <div class="category-chevron">›</div>
+        </div>
       </div>
       <div class="category-sub">
         <span>${cat.code ? 'Main code ' + cat.code : 'Special group'}</span>
         <span>${cat.items.length} total entries</span>
       </div>`;
-    btn.onclick = () => { activeCategory = cat.name; render(); };
-    categoryList.appendChild(btn);
+
+    btn.onclick = () => {
+      if (expandedCategories.has(cat.name)) expandedCategories.delete(cat.name);
+      else expandedCategories.add(cat.name);
+      activeCategory = cat.name;
+      render();
+    };
+    group.appendChild(btn);
+
+    if (expanded) {
+      const panel = document.createElement('div');
+      panel.className = 'subcategory-panel';
+
+      cat.filteredItems.forEach(([code, name]) => {
+        const row = document.createElement('button');
+        row.className = 'subcategory-row';
+        row.type = 'button';
+        row.title = `Open ${name}`;
+        row.innerHTML = `
+          <span class="subcategory-name">${name}</span>
+          <span class="subcategory-code">${code}</span>
+        `;
+        row.onclick = (event) => {
+          event.stopPropagation();
+          openCode(code);
+        };
+        panel.appendChild(row);
+      });
+
+      group.appendChild(panel);
+    }
+
+    categoryList.appendChild(group);
   });
 }
+
 
 function renderSummary(categories, visibleItems, focusedCat) {
   document.getElementById('metricCats').textContent = focusedCat ? '1' : categories.length;
@@ -470,8 +554,8 @@ function renderSummary(categories, visibleItems, focusedCat) {
   document.getElementById('metricMatches').textContent = searchEl.value.trim() ? visibleItems.length : 0;
   document.getElementById('focusTitle').textContent = focusedCat ? focusedCat.name : 'All categories';
   document.getElementById('focusSub').textContent = focusedCat
-    ? `${focusedCat.items.length} source entries in this category group.`
-    : 'Browse the full code catalog from the uploaded PDF.';
+    ? `${visibleItems.length} visible subcategories in this category group.`
+    : 'Browse the full code catalog.';
   document.getElementById('focusCode').textContent = focusedCat
     ? (focusedCat.code ? `Main code: ${focusedCat.code}` : 'Special grouping')
     : 'All results';
@@ -511,6 +595,8 @@ function renderItems(visibleItems, focusedCat) {
 
 function render() {
   const cats = currentCategories();
+  const visibleNames = new Set(cats.map(c => c.name));
+  expandedCategories = new Set([...expandedCategories].filter(name => visibleNames.has(name)));
   if (activeCategory && !cats.some(c => c.name === activeCategory)) activeCategory = null;
   const focusedCat = activeCategory ? cats.find(c => c.name === activeCategory) : null;
   const visibleItems = (focusedCat
@@ -521,6 +607,7 @@ function render() {
   renderItems(visibleItems, focusedCat);
 }
 
+
 searchEl.addEventListener('input', render);
 sortEl.addEventListener('change', render);
 scopeEl.addEventListener('change', render);
@@ -529,6 +616,7 @@ resetBtn.addEventListener('click', () => {
   sortEl.value = 'default';
   scopeEl.value = 'all';
   activeCategory = null;
+  expandedCategories = new Set();
   render();
 });
 
